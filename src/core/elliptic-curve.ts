@@ -22,7 +22,7 @@ export class EllipticCurve {
       let y: number;
       const xPart = x * x * x + this.a * x + this.b;
       if (isSquare(xPart)) {
-        y = sqrt(xPart);
+        y = modulo(sqrt(xPart), this.p);
       } else if (isSquare(modulo(xPart, this.p))) {
         y = sqrt(modulo(xPart, this.p));
       } else {
