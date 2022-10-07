@@ -17,7 +17,7 @@ export class ModularOperation {
         const q = Math.floor(r0 / r1);
         r2 = modulo(r0, r1);
         if (r2 === 0) {
-          return s2 > 0 ? s2 : s2 + mod;
+          return modulo(s2, mod);
         }
 
         s2 = s0 - q * s1;

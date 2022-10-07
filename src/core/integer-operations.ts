@@ -12,3 +12,15 @@ export function isInt(a: number) {
 export function modulo(a: number, b: number) {
   return ((a % b) + b) % b;
 }
+
+export function isSquare(a: number) {
+  if (isInt(a)) {
+    return sqrt(a) * sqrt(a) === a;
+  }
+
+  return false;
+}
+
+export function sqrt(a: number) {
+  return Math.floor(Math.sqrt(a));
+}

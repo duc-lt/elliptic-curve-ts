@@ -1,7 +1,4 @@
-import { ModularOperation as _ } from './core';
-import EllipticCurve from './core/elliptic-curve';
-import { Point } from './core/point';
+import { EllipticCurve } from './core';
 
-const eCurve = new EllipticCurve(-5, 8, 37);
-const p = new Point(6, 3);
-console.log(eCurve.timesTable(p));
+const eCurve = new EllipticCurve(1, 6, 17);
+console.log(eCurve.timesTable());
