@@ -1,18 +1,25 @@
-import { isInt, isSquare, modulo, sqrt } from './integer-operations';
-import { ModularOperation as _ } from './mod-operations';
+import { IntegerOperation as io } from './integer-operations';
+import { ModularOperation as mo } from './mod-operations';
 import { Point, POINT_AT_INFINITY } from './point';
 
+// Đường cong elliptic modulo p không kỳ dị:
+// y^2 = x^3 + ax + b (mod p), 4a^3 + 27b^2 != 0
 export class EllipticCurve {
-  // Non-singular elliptic curve:
-  // y^2 = x^3 + ax + b (mod p), 4a^3 + 27b^2 != 0
   private a!: number;
   private b!: number;
   private p!: number;
+  private points: Point[] = [];
   constructor(a: number, b: number, p: number) {
-    if (this.isNonSingular() && isInt(a) && isInt(b) && isInt(p) && p > 0) {
+    if (
+      this.isNonSingular() &&
+      io.isInt(a) &&
+      io.isInt(b) &&
+      io.isPositiveInt(p)
+    ) {
       this.a = a;
       this.b = b;
       this.p = p;
+      this.points = this.getPoints();
     }
   }
 
@@ -21,10 +28,8 @@ export class EllipticCurve {
     for (let x = 0; x < this.p; x++) {
       let y: number;
       const xPart = x * x * x + this.a * x + this.b;
-      if (isSquare(xPart)) {
-        y = modulo(sqrt(xPart), this.p);
-      } else if (isSquare(modulo(xPart, this.p))) {
-        y = sqrt(modulo(xPart, this.p));
+      if (mo.isSquare(xPart, this.p)) {
+        y = mo.sqrt(xPart, this.p)!;
       } else {
         continue;
       }
@@ -44,12 +49,9 @@ export class EllipticCurve {
     const x = point.getX(),
       y = point.getY();
     return (
-      modulo(y * y, this.p) === modulo(x * x * x + this.a * x + this.b, this.p)
+      io.modulo(y * y, this.p) ===
+      io.modulo(x * x * x + this.a * x + this.b, this.p)
     );
-  }
-
-  private isNonSingular() {
-    return 4 * this.a * this.a * this.a + 27 * this.b * this.b !== 0;
   }
 
   add(pA: Point, pB: Point) {
@@ -64,12 +66,12 @@ export class EllipticCurve {
 
       let slope;
       if (pA.equalsTo(pB)) {
-        slope = _.divide(3 * xA * xA + this.a, 2 * yA, this.p);
+        slope = mo.divide(3 * xA * xA + this.a, 2 * yA, this.p);
       } else {
-        slope = _.divide(yB - yA, xB - xA, this.p);
+        slope = mo.divide(yB - yA, xB - xA, this.p);
       }
-      const xAdd = modulo(slope * slope - xA - xB, this.p);
-      const yAdd = modulo(slope * (xA - xAdd) - yA, this.p);
+      const xAdd = io.modulo(slope * slope - xA - xB, this.p);
+      const yAdd = io.modulo(slope * (xA - xAdd) - yA, this.p);
       return new Point(xAdd, yAdd);
     }
 
@@ -88,7 +90,7 @@ export class EllipticCurve {
 
   multiply(p: Point, k: number) {
     let prodPoint = new Point(p.getX(), p.getY());
-    if (this.isOnCurve(p) && isInt(k) && k > 0) {
+    if (this.isOnCurve(p) && io.isInt(k) && k > 0) {
       for (let i = 1; i < k; i++) {
         prodPoint = prodPoint.assign(this.add(prodPoint, p)!);
       }
@@ -98,10 +100,22 @@ export class EllipticCurve {
     return POINT_AT_INFINITY;
   }
 
-  timesTable() {
+  getTimesTable(p: Point) {
+    let k = 1;
+    let table = `P(${p.getX()}, ${p.getY()}):\n`;
+    while (!this.multiply(p, k).equalsTo(POINT_AT_INFINITY)) {
+      const prodPoint = this.multiply(p, k);
+      table += `  - ${k > 1 ? k : ''}P = ${prodPoint.toString()}\n`;
+      k++;
+    }
+
+    table += `  - ${k}P = ${POINT_AT_INFINITY.toString()}\n`;
+    return table;
+  }
+
+  getTimesTables() {
     let tables = `Times tables of ${this.toString()}\n`;
-    const points = this.getPoints();
-    console.log(points)
+    const points = this.points;
     for (const p of points) {
       let k = 1;
       const index = points.indexOf(p);
@@ -125,6 +139,14 @@ export class EllipticCurve {
   }
 
   countPoints() {
-    return this.getPoints().length + 1; // take point at infinity into account
+    return this.points.length + 1; // tính cả điểm vô cực - point at infinity
+  }
+
+  isPrimePointsCount() {
+    return io.isPrime(this.countPoints());
+  }
+
+  private isNonSingular() {
+    return 4 * this.a * this.a * this.a + 27 * this.b * this.b !== 0;
   }
 }
